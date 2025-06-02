@@ -68,7 +68,7 @@ tmdb_addons_pool = [
     'https://tmdb.elfhosted.com/%7B%22provide_imdbId%22%3A%22true%22%2C%22language%22%3A%22it-IT%22%7D' # Elfhosted
 ]
 
-tmdb_addon_meta_url = tmdb_addons_pool[0]
+tmdb_addon_meta_url = tmdb_addons_pool[2]
 cinemeta_url = 'https://v3-cinemeta.strem.io'
 
 
@@ -178,9 +178,10 @@ async def get_meta(request: Request, addon_url, type: str, id: str):
                     client.get(f"{tmdb_addon_meta_url}/meta/{type}/{tmdb_id}.json"),
                     client.get(f"{cinemeta_url}/meta/{type}/{id}.json")
                 ]
+                tmdb_meta = {}
                 metas = await asyncio.gather(*tasks)
                 # TMDB addon retry and switch addon
-                for retry in range(6):
+                for retry in range(3):
                     if metas[0].status_code == 200:
                         tmdb_meta = metas[0].json()
                         break
