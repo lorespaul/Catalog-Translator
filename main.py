@@ -178,20 +178,20 @@ async def get_meta(request: Request, addon_url, type: str, id: str):
                     client.get(f"{tmdb_addon_meta_url}/meta/{type}/{tmdb_id}.json"),
                     client.get(f"{cinemeta_url}/meta/{type}/{id}.json")
                 ]
-                tmdb_meta = {}
                 metas = await asyncio.gather(*tasks)
                 # TMDB addon retry and switch addon
-                for retry in range(3):
-                    if metas[0].status_code == 200:
-                        tmdb_meta = metas[0].json()
-                        break
-                    else:
-                        index = tmdb_addons_pool.index(tmdb_addon_meta_url)
-                        tmdb_addon_meta_url = tmdb_addons_pool[(index + 1) % len(tmdb_addons_pool)]
-                        metas[0] = await client.get(f"{tmdb_addon_meta_url}/meta/{type}/{tmdb_id}.json")
-                        if metas[0].status_code == 200:
-                            tmdb_meta = metas[0].json()
-                            break
+                # for retry in range(3):
+                tmdb_meta = {}
+                if metas[0].status_code == 200:
+                    tmdb_meta = metas[0].json()
+                    # break
+                    # else:
+                    #     index = tmdb_addons_pool.index(tmdb_addon_meta_url)
+                    #     tmdb_addon_meta_url = tmdb_addons_pool[(index + 1) % len(tmdb_addons_pool)]
+                    #     metas[0] = await client.get(f"{tmdb_addon_meta_url}/meta/{type}/{tmdb_id}.json")
+                    #     if metas[0].status_code == 200:
+                    #         tmdb_meta = metas[0].json()
+                    #         break
                 
                 cinemeta_meta = metas[1].json()
                 
@@ -254,7 +254,7 @@ async def get_meta(request: Request, addon_url, type: str, id: str):
                 if is_converted:
                     tmdb_id = await tmdb.convert_imdb_to_tmdb(imdb_id)
                     # TMDB Addons retry
-                    for retry in range(6):
+                    for retry in range(3):
                         response = await client.get(f"{tmdb_addon_meta_url}/meta/{type}/{tmdb_id}.json")
                         if response.status_code == 200:
                             meta = response.json()
