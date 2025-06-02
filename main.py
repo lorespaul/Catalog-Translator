@@ -3,6 +3,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.gzip import GZipMiddleware
 from contextlib import asynccontextmanager
 from datetime import timedelta
 from cache import Cache
@@ -38,7 +39,8 @@ app = FastAPI(lifespan=lifespan)
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-
+# Config GZip
+app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=5)
 # Config CORS
 app.add_middleware(
     CORSMiddleware,
