@@ -24,7 +24,7 @@ REQUEST_TIMEOUT = 120
 COMPATIBILITY_ID = ['tt', 'kitsu', 'mal']
 
 # Cache set
-catalog_cache = Cache(maxsize=100000, ttl=timedelta(hours=1).total_seconds())
+catalog_cache = Cache(maxsize=100000, ttl=timedelta(hours=6).total_seconds())
 catalog_cache.clear()
 meta_cache = Cache(maxsize=100000, ttl=timedelta(hours=12).total_seconds())
 meta_cache.clear()
