@@ -24,6 +24,8 @@ REQUEST_TIMEOUT = 120
 COMPATIBILITY_ID = ['tt', 'kitsu', 'mal']
 
 # Cache set
+catalog_cache = Cache(maxsize=100000, ttl=timedelta(hours=1).total_seconds())
+catalog_cache.clear()
 meta_cache = Cache(maxsize=100000, ttl=timedelta(hours=12).total_seconds())
 meta_cache.clear()
 
@@ -125,10 +127,15 @@ async def get_manifest(addon_url):
 
 
 @app.get('/{addon_url}/{user_settings}/catalog/{type}/{path:path}')
-async def get_catalog(addon_url, type: str, user_settings: str, path: str):
+async def get_catalog(addon_url: str, type: str, user_settings: str, path: str):
     # Cinemeta last-videos
     if 'last-videos' in path:
         return RedirectResponse(f"{cinemeta_url}/catalog/{type}/{path}")
+    
+    cache_id = addon_url + '__' + type
+    new_catalog = catalog_cache.get(cache_id)
+    if new_catalog != None:
+        return new_catalog
     
     user_settings = parse_user_settings(user_settings)
     addon_url = decode_base64_url(addon_url)
@@ -153,6 +160,7 @@ async def get_catalog(addon_url, type: str, user_settings: str, path: str):
             return {}
 
     new_catalog = translator.translate_catalog(catalog, tmdb_details, user_settings['sp'], user_settings['tr'])
+    catalog_cache.set(cache_id, new_catalog)
     return new_catalog
 
 
@@ -221,29 +229,32 @@ async def get_meta(request: Request, addon_url, type: str, id: str):
                         meta = tmdb_meta
 
                 # Empty tmdb_data
-                else:
-                    if len(cinemeta_meta.get('meta', [])) > 0:
-                        meta = cinemeta_meta
-                        description = meta['meta'].get('description', '')
-                        
-                        if type == 'series':
-                            tasks = [
-                                translator.translate_with_api(client, description),
-                                translator.translate_episodes(client, meta['meta']['videos'])
-                            ]
-                            description, episodes = await asyncio.gather(*tasks)
-                            meta['meta']['videos'] = episodes
-                            meta['meta']['videos'] = await translator.translate_episodes(client, meta['meta']['videos'])
+                elif len(cinemeta_meta.get('meta', [])) > 0:
+                    meta = cinemeta_meta
+                    description = meta['meta'].get('description', '')
+                    
+                    if type == 'series':
+                        tasks = [
+                            translator.translate_with_api(client, description),
+                            translator.translate_episodes(client, meta['meta']['videos'])
+                        ]
+                        description, episodes = await asyncio.gather(*tasks)
+                        meta['meta']['videos'] = episodes
+                        meta['meta']['videos'] = await translator.translate_episodes(client, meta['meta']['videos'])
 
-                        elif type == 'movie':
-                            description = await translator.translate_with_api(client, description)
+                    elif type == 'movie':
+                        description = await translator.translate_with_api(client, description)
 
-                        meta['meta']['description'] = description
+                    meta['meta']['description'] = description
                     
                     # Empty cinemeta and tmdb return empty meta
-                    else:
-                        return {}
-                    
+                else:
+                    return {}
+                
+                if len(cinemeta_meta.get('meta', [])) > 0 and len(meta.get('meta', [])) > 0:
+                    meta['meta']['poster'] = cinemeta_meta['meta']['poster']
+                    meta['meta']['background'] = cinemeta_meta['meta']['background']
+                    meta['meta']['logo'] = cinemeta_meta['meta']['logo']    
                 
             # Handle kitsu and mal ids
             elif 'kitsu' in id or 'mal' in id:
