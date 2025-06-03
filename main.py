@@ -132,7 +132,7 @@ async def get_catalog(addon_url: str, type: str, user_settings: str, path: str):
     if 'last-videos' in path:
         return RedirectResponse(f"{cinemeta_url}/catalog/{type}/{path}")
     
-    cache_id = addon_url + '__' + type
+    cache_id = addon_url + '__' + type + '__' + path
     new_catalog = catalog_cache.get(cache_id)
     if new_catalog != None:
         return new_catalog
