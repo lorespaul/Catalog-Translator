@@ -681,7 +681,7 @@ def setup_logging() -> dict:
             "access": {
                 "format": "%(levelname)s | %(message)s",
             },
-        }
+        },
 
         "handlers": {
             "default": {
@@ -695,20 +695,31 @@ def setup_logging() -> dict:
         },
 
         "loggers": {
-            # Uvicorn base
-            "uvicorn": {"level": "INFO"},
-            "uvicorn.error": {"level": "INFO"},
-
-            # ACCESS LOG → solo WARNING+ (quindi 4xx/5xx)
+            "uvicorn": {
+                "handlers": ["default"],
+                "level": "INFO",
+                "propagate": False,
+            },
+            "uvicorn.error": {
+                "handlers": ["default"],
+                "level": "INFO",
+                "propagate": False,
+            },
             "uvicorn.access": {
                 "handlers": ["access"],
+                "level": "WARNING",   # 🔥 solo 4xx / 5xx
+                "propagate": False,
+            },
+            "fastapi": {
+                "handlers": ["default"],
                 "level": "WARNING",
                 "propagate": False,
             },
-
-            # FastAPI / app
-            "fastapi": {"handlers": ["default"], "level": "WARNING"},
-            "app": {"handlers": ["default"], "level": "WARNING"},
+            "app": {
+                "handlers": ["default"],
+                "level": "WARNING",
+                "propagate": False,
+            },
         },
     }
 
