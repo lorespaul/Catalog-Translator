@@ -675,13 +675,13 @@ def setup_logging() -> dict:
         "disable_existing_loggers": False,
 
         "formatters": {
-            "access": {
-                "format": '%(levelname)s | %(client_addr)s | "%(request_line)s" %(status_code)s',
-            },
             "default": {
                 "format": "%(levelname)s | %(name)s | %(message)s",
             },
-        },
+            "access": {
+                "format": "%(levelname)s | %(message)s",
+            },
+        }
 
         "handlers": {
             "default": {
