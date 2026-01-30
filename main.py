@@ -18,6 +18,7 @@ import json
 import os
 import zipfile
 import shutil
+import logging.config
 
 # Settings
 translator_version = 'v0.1.9'
@@ -668,6 +669,62 @@ def parse_user_settings(user_settings: str) -> dict:
     return _user_settings
 
 
+def setup_logging() -> dict:
+    LOGGING_CONFIG = {
+        "version": 1,
+        "disable_existing_loggers": False,
+
+        "formatters": {
+            "access": {
+                "format": '%(levelname)s | %(client_addr)s | "%(request_line)s" %(status_code)s',
+            },
+            "default": {
+                "format": "%(levelname)s | %(name)s | %(message)s",
+            },
+        },
+
+        "handlers": {
+            "default": {
+                "class": "logging.StreamHandler",
+                "formatter": "default",
+            },
+            "access": {
+                "class": "logging.StreamHandler",
+                "formatter": "access",
+            },
+        },
+
+        "loggers": {
+            # Uvicorn base
+            "uvicorn": {"level": "INFO"},
+            "uvicorn.error": {"level": "INFO"},
+
+            # ACCESS LOG → solo WARNING+ (quindi 4xx/5xx)
+            "uvicorn.access": {
+                "handlers": ["access"],
+                "level": "WARNING",
+                "propagate": False,
+            },
+
+            # FastAPI / app
+            "fastapi": {"handlers": ["default"], "level": "WARNING"},
+            "app": {"handlers": ["default"], "level": "WARNING"},
+        },
+    }
+
+    logging.config.dictConfig(LOGGING_CONFIG)
+
+    return LOGGING_CONFIG
+
+
 if __name__ == '__main__':
     import uvicorn
-    uvicorn.run(app, host='0.0.0.0', port=int(os.environ.get("PORT", 8080)))
+    log_config = setup_logging()
+    # uvicorn.run(app, host='0.0.0.0', port=int(os.environ.get("PORT", 8080)))
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT", 8080)),
+        log_config=log_config,
+        log_level="info",
+    )
