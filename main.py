@@ -142,14 +142,14 @@ async def link_generator(request: Request):
     return response
 
 
-@app.get("/manifest.json")
+@app.api_route("/manifest.json", methods=["GET", "HEAD"])
 async def get_manifest():
     with open("manifest.json", "r", encoding="utf-8") as f:
         manifest = json.load(f)
     return JSONResponse(content=manifest, headers=cloudflare_cache_headers)
 
 
-@app.get('/{addon_url}/{user_settings}/manifest.json')
+@app.api_route('/{addon_url}/{user_settings}/manifest.json', methods=["GET", "HEAD"])
 async def get_manifest(addon_url, user_settings):
     addon_url = decode_base64_url(addon_url)
     user_settings = parse_user_settings(user_settings)
